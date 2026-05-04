@@ -27,7 +27,8 @@ SerenityPrject/
         │   ├── runners/                  ← CucumberTestRunner
         │   ├── stepdefinitions/          ← Step Definitions (Cucumber)
         │   ├── pages/                    ← Page Objects (Serenity)
-        │   └── actions/                  ← Screenplay Tasks/Actions
+        │   ├── actions/                  ← Screenplay Tasks/Actions
+        │   └── utils/                    ← Helper classes (DatabaseHelper, OpenCartApiHelper)
         └── resources/
             ├── serenity.conf             ← Serenity configuration
             ├── features/                 ← Gherkin feature files
@@ -68,6 +69,7 @@ mvn clean verify
 | JUnit | 5.10.1 | Test runner |
 | Selenium | (bundled) | UI automation |
 | REST Assured | (bundled) | API testing |
+| MySQL JDBC | 8.0.33 | Kết nối Database (Module 12) |
 
 ## Conventions
 
@@ -87,6 +89,10 @@ mvn clean verify
 | `@wip` | Work in progress — chưa hoàn thiện |
 | `@skip` | Bỏ qua — không chạy |
 | `@debug` | Dùng khi debug thủ công |
+| `@integration` | Test tích hợp nhiều layer (Web + API + DB) |
+| `@e2e` | End-to-end flow test |
+| `@db` | Test có truy vấn Database |
+| `@cleanup` | Hook sẽ tự dọn dẹp test data trong DB sau khi chạy |
 
 ### Nguyên tắc code
 - Step Definition chỉ được gọi Page Object/Action — không chứa logic Selenium trực tiếp

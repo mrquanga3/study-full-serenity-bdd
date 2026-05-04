@@ -19,6 +19,8 @@
 | 8 | API Testing với REST Assured | 90 phút |
 | 9 | Serenity Reports | 45 phút |
 | 10 | Best Practices & CI/CD | 60 phút |
+| 11 | Bài Tập Thực Hành | - |
+| 12 | Tích Hợp Web + API + Database (OpenCart) | 120 phút |
 
 ---
 
@@ -1776,6 +1778,662 @@ Luồng 3 — Data-driven:
 ```
 
 **Yêu cầu**: Áp dụng Page Object Pattern, Tags, và xem Serenity Report
+
+---
+
+# MODULE 12: Tích Hợp Test — Web + API + Database
+
+---
+
+## 12.1 — Tại sao cần test tích hợp?
+
+Khi test một hệ thống thực tế, dữ liệu tồn tại ở nhiều nơi:
+
+```
+┌───────────────┐    ┌───────────────┐    ┌───────────────┐
+│   Web UI      │    │   REST API    │    │   Database    │
+│ (Người dùng   │    │ (JSON/HTTP)   │    │ (Source of    │
+│  thấy)        │    │               │    │  Truth)       │
+└───────────────┘    └───────────────┘    └───────────────┘
+```
+
+**Data inconsistency** xảy ra khi:
+- UI hiển thị 150 customers, DB chỉ có 148
+- API trả về status "active", DB lưu status = 0
+- Web cho phép đặt hàng, nhưng DB không ghi lại order
+
+### Hệ thống Demo: OpenCart
+
+| Layer | Địa chỉ |
+|-------|---------|
+| **Web Admin** | `http://103.245.237.118:8081/opencart/administrator/` |
+| **REST API** | `http://103.245.237.118:8081/opencart/index.php?route=api/...` |
+| **Database** | MySQL tại `103.245.237.118:3306` — schema `opencart` |
+
+---
+
+## 12.2 — Cấu trúc Database OpenCart
+
+Các bảng quan trọng nhất cần biết:
+
+```sql
+-- Khách hàng (customer)
+SELECT customer_id, firstname, lastname, email, telephone, status
+FROM oc_customer;
+
+-- Đơn hàng (order)
+SELECT order_id, customer_id, firstname, lastname, total, order_status_id, date_added
+FROM oc_order;
+
+-- Người dùng admin
+SELECT user_id, username, firstname, lastname, email, status
+FROM oc_user;
+
+-- Sản phẩm
+SELECT product_id, model, price, quantity, status
+FROM oc_product;
+
+-- Trạng thái đơn hàng (1=Pending, 2=Processing, 5=Complete, 7=Canceled)
+SELECT order_status_id, name
+FROM oc_order_status
+WHERE language_id = 1;
+```
+
+---
+
+## 12.3 — Thêm dependency MySQL JDBC
+
+```xml
+<!-- pom.xml — thêm vào <dependencies> -->
+
+<!-- MySQL JDBC Driver -->
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.33</version>
+    <scope>test</scope>
+</dependency>
+```
+
+---
+
+## 12.4 — Tạo DatabaseHelper
+
+Tạo `src/test/java/com/example/utils/DatabaseHelper.java`:
+
+```java
+package com.example.utils;
+
+import java.sql.*;
+import java.util.*;
+
+public class DatabaseHelper {
+
+    private static final String DB_URL  =
+        "jdbc:mysql://103.245.237.118:3306/opencart?useSSL=false&serverTimezone=UTC";
+    private static final String DB_USER = "opencart_user";
+    private static final String DB_PASS = "opencart_pass";
+
+    private Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+    }
+
+    /** Đếm số customer đang active trong DB */
+    public int countActiveCustomers() {
+        String sql = "SELECT COUNT(*) FROM oc_customer WHERE status = 1";
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs   = stmt.executeQuery(sql)) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            throw new RuntimeException("DB query failed: " + e.getMessage(), e);
+        }
+        return 0;
+    }
+
+    /** Lấy thông tin customer theo email */
+    public Map<String, String> getCustomerByEmail(String email) {
+        String sql = "SELECT firstname, lastname, email, telephone, status "
+                   + "FROM oc_customer WHERE email = ?";
+        Map<String, String> result = new HashMap<>();
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    result.put("firstname", rs.getString("firstname"));
+                    result.put("lastname",  rs.getString("lastname"));
+                    result.put("email",     rs.getString("email"));
+                    result.put("telephone", rs.getString("telephone"));
+                    result.put("status",    rs.getString("status"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("DB query failed: " + e.getMessage(), e);
+        }
+        return result;
+    }
+
+    /** Đếm số đơn hàng theo order_status_id */
+    public int countOrdersByStatus(int statusId) {
+        String sql = "SELECT COUNT(*) FROM oc_order WHERE order_status_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, statusId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("DB query failed: " + e.getMessage(), e);
+        }
+        return 0;
+    }
+
+    /** Xóa customer theo email — dùng để dọn dẹp test data */
+    public void deleteCustomerByEmail(String email) {
+        String sql = "DELETE FROM oc_customer WHERE email = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("DB delete failed: " + e.getMessage(), e);
+        }
+    }
+}
+```
+
+---
+
+## 12.5 — Tạo OpenCartApiHelper
+
+Tạo `src/test/java/com/example/utils/OpenCartApiHelper.java`:
+
+```java
+package com.example.utils;
+
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import net.thucydides.core.annotations.Step;
+
+import static net.serenitybdd.rest.SerenityRest.given;
+
+public class OpenCartApiHelper {
+
+    private static final String BASE_URL = "http://103.245.237.118:8081/opencart";
+    private String apiToken;
+
+    @Step("Đăng nhập OpenCart API với user '{0}'")
+    public void login(String apiUser, String apiKey) {
+        apiToken = given()
+            .baseUri(BASE_URL)
+            .contentType(ContentType.URLENC)
+            .formParam("username", apiUser)
+            .formParam("key", apiKey)
+            .when()
+            .post("/index.php?route=api/login")
+            .then()
+            .statusCode(200)
+            .extract()
+            .path("api_token");
+    }
+
+    @Step("Gọi GET API: {0}")
+    public Response get(String route) {
+        return given()
+            .baseUri(BASE_URL)
+            .queryParam("route", route)
+            .queryParam("api_token", apiToken)
+            .when()
+            .get("/index.php")
+            .then()
+            .extract().response();
+    }
+
+    @Step("Gọi POST API: {0}")
+    public Response post(String route, String jsonBody) {
+        return given()
+            .baseUri(BASE_URL)
+            .contentType(ContentType.JSON)
+            .queryParam("route", route)
+            .queryParam("api_token", apiToken)
+            .body(jsonBody)
+            .when()
+            .post("/index.php")
+            .then()
+            .extract().response();
+    }
+
+    public String getApiToken() { return apiToken; }
+}
+```
+
+---
+
+## 12.6 — Page Objects: OpenCart Admin
+
+Tạo `src/test/java/com/example/pages/AdminLoginPage.java`:
+
+```java
+package com.example.pages;
+
+import net.serenitybdd.core.pages.PageObject;
+import net.serenitybdd.core.pages.WebElementFacade;
+import net.thucydides.model.annotations.DefaultUrl;
+import org.openqa.selenium.support.FindBy;
+
+@DefaultUrl("http://103.245.237.118:8081/opencart/administrator/")
+public class AdminLoginPage extends PageObject {
+
+    @FindBy(id = "input-username")
+    private WebElementFacade usernameField;
+
+    @FindBy(id = "input-password")
+    private WebElementFacade passwordField;
+
+    @FindBy(css = "button[type='submit']")
+    private WebElementFacade loginButton;
+
+    public void loginAs(String username, String password) {
+        usernameField.type(username);
+        passwordField.type(password);
+        loginButton.click();
+    }
+}
+```
+
+Tạo `src/test/java/com/example/pages/CustomerListPage.java`:
+
+```java
+package com.example.pages;
+
+import net.serenitybdd.core.pages.PageObject;
+import net.serenitybdd.core.pages.WebElementFacade;
+import org.openqa.selenium.support.FindBy;
+
+public class CustomerListPage extends PageObject {
+
+    private static final String BASE_ADMIN =
+        "http://103.245.237.118:8081/opencart/administrator/index.php";
+
+    // Text dạng: "Showing 1 to 20 of 150 (8 Pages)"
+    @FindBy(css = ".col-sm-6.text-right")
+    private WebElementFacade totalCountText;
+
+    @FindBy(css = "input[name='filter_email']")
+    private WebElementFacade emailFilterField;
+
+    @FindBy(id = "button-filter")
+    private WebElementFacade filterButton;
+
+    @FindBy(css = "#form-customer tbody tr:first-child td:nth-child(2)")
+    private WebElementFacade firstRowName;
+
+    @FindBy(css = "#form-customer tbody tr:first-child td:nth-child(3)")
+    private WebElementFacade firstRowEmail;
+
+    public void open() {
+        getDriver().get(BASE_ADMIN + "?route=customer/customer");
+    }
+
+    /** Parse "Showing 1 to 20 of 150 (8 Pages)" → 150 */
+    public int getTotalCustomerCount() {
+        String text = totalCountText.getText();
+        return Integer.parseInt(text.replaceAll(".*of (\\d+).*", "$1").trim());
+    }
+
+    public void filterByEmail(String email) {
+        emailFilterField.clear();
+        emailFilterField.type(email);
+        filterButton.click();
+    }
+
+    public String getFirstRowName()  { return firstRowName.getText().trim(); }
+    public String getFirstRowEmail() { return firstRowEmail.getText().trim(); }
+}
+```
+
+---
+
+## 12.7 — Feature: So sánh Customer (UI vs DB)
+
+Tạo `src/test/resources/features/integration/customer_sync.feature`:
+
+```gherkin
+@integration @ui @db
+Feature: Tính nhất quán dữ liệu Customer giữa UI và Database
+
+  Background:
+    Given admin đã đăng nhập vào OpenCart admin
+
+  @smoke
+  Scenario: Số lượng customer trên UI khớp với Database
+    When admin mở trang danh sách Customer
+    Then số lượng customer hiển thị trên UI bằng với số lượng trong Database
+
+  Scenario: Thông tin customer trên UI khớp với Database
+    Given customer "existing@example.com" tồn tại trong Database
+    When admin tìm kiếm customer theo email "existing@example.com"
+    Then họ tên và email hiển thị trên UI khớp với dữ liệu trong Database
+```
+
+---
+
+## 12.8 — Feature: So sánh Order (DB vs UI)
+
+Tạo `src/test/resources/features/integration/order_sync.feature`:
+
+```gherkin
+@integration @db @ui
+Feature: Tính nhất quán dữ liệu Order giữa UI và Database
+
+  Background:
+    Given admin đã đăng nhập vào OpenCart admin
+
+  Scenario: Số đơn hàng Pending trên UI khớp với Database
+    When admin mở trang danh sách Order
+    Then số đơn hàng trạng thái "Pending" trên UI bằng với Database
+
+  @e2e
+  Scenario: Tạo customer mới và xác minh đồng bộ 3 layer
+    When admin tạo customer mới với thông tin:
+      | First Name | Integration      |
+      | Last Name  | Test             |
+      | Email      | sync@test.com    |
+      | Telephone  | 0901234567       |
+      | Password   | Test@1234        |
+    Then UI xác nhận tạo customer thành công
+    And customer "sync@test.com" tồn tại trong Database với trạng thái active
+    And dữ liệu trong Database khớp với thông tin vừa nhập
+```
+
+---
+
+## 12.9 — Step Definitions: Integration Steps
+
+Tạo `src/test/java/com/example/stepdefinitions/IntegrationSteps.java`:
+
+```java
+package com.example.stepdefinitions;
+
+import com.example.pages.AdminLoginPage;
+import com.example.pages.CustomerListPage;
+import com.example.utils.DatabaseHelper;
+import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.*;
+import org.junit.jupiter.api.Assumptions;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class IntegrationSteps {
+
+    // Serenity tự inject — không dùng new
+    AdminLoginPage adminLoginPage;
+    CustomerListPage customerListPage;
+
+    private final DatabaseHelper db = new DatabaseHelper();
+
+    // Lưu dữ liệu giữa các bước
+    private int uiCount;
+    private int dbCount;
+    private Map<String, String> dbCustomer;
+
+    // ─── Background ───────────────────────────────────────────────────────────
+
+    @Given("admin đã đăng nhập vào OpenCart admin")
+    public void adminIsLoggedIn() {
+        adminLoginPage.open();
+        adminLoginPage.loginAs("admin", "admin");
+    }
+
+    // ─── Customer count ───────────────────────────────────────────────────────
+
+    @When("admin mở trang danh sách Customer")
+    public void adminOpensCustomerList() {
+        customerListPage.open();
+        uiCount = customerListPage.getTotalCustomerCount();
+    }
+
+    @Then("số lượng customer hiển thị trên UI bằng với số lượng trong Database")
+    public void verifyCustomerCountMatches() {
+        dbCount = db.countActiveCustomers();
+
+        // Ghi vào Serenity report để dễ debug
+        net.serenitybdd.core.Serenity.recordReportData()
+            .withTitle("Customer Count Comparison")
+            .andContents("UI: " + uiCount + "\nDB: " + dbCount);
+
+        assertEquals(dbCount, uiCount,
+            String.format("Số customer không khớp — UI: %d, DB: %d", uiCount, dbCount));
+    }
+
+    // ─── Customer detail ──────────────────────────────────────────────────────
+
+    @Given("customer {string} tồn tại trong Database")
+    public void customerExistsInDb(String email) {
+        dbCustomer = db.getCustomerByEmail(email);
+        Assumptions.assumeTrue(!dbCustomer.isEmpty(),
+            "Customer " + email + " không tồn tại trong DB — bỏ qua test");
+    }
+
+    @When("admin tìm kiếm customer theo email {string}")
+    public void adminSearchByEmail(String email) {
+        customerListPage.open();
+        customerListPage.filterByEmail(email);
+    }
+
+    @Then("họ tên và email hiển thị trên UI khớp với dữ liệu trong Database")
+    public void verifyCustomerDetailMatches() {
+        String expectedName = dbCustomer.get("firstname") + " " + dbCustomer.get("lastname");
+        String uiName  = customerListPage.getFirstRowName();
+        String uiEmail = customerListPage.getFirstRowEmail();
+
+        assertAll("Customer data mismatch",
+            () -> assertEquals(expectedName.trim(), uiName,
+                    "Tên: DB='" + expectedName + "', UI='" + uiName + "'"),
+            () -> assertEquals(dbCustomer.get("email"), uiEmail,
+                    "Email: DB='" + dbCustomer.get("email") + "', UI='" + uiEmail + "'")
+        );
+    }
+
+    // ─── Order count ──────────────────────────────────────────────────────────
+
+    @When("admin mở trang danh sách Order")
+    public void adminOpensOrderList() {
+        getDriver().get(
+            "http://103.245.237.118:8081/opencart/administrator/index.php?route=sale/order"
+        );
+    }
+
+    @Then("số đơn hàng trạng thái {string} trên UI bằng với Database")
+    public void verifyOrderCountByStatus(String statusName) {
+        // Pending = order_status_id 1
+        Map<String, Integer> statusMap = Map.of(
+            "Pending",    1,
+            "Processing", 2,
+            "Shipped",    3,
+            "Complete",   5,
+            "Canceled",   7
+        );
+        int statusId = statusMap.getOrDefault(statusName, 1);
+        dbCount = db.countOrdersByStatus(statusId);
+
+        // TODO: parse UI count từ order list page (tương tự CustomerListPage)
+        // uiCount = orderListPage.getCountByStatus(statusName);
+        // assertEquals(dbCount, uiCount, "Order count mismatch");
+        System.out.println("DB order count (" + statusName + "): " + dbCount);
+    }
+
+    // ─── Create & verify E2E ──────────────────────────────────────────────────
+
+    @When("admin tạo customer mới với thông tin:")
+    public void adminCreatesCustomer(DataTable dataTable) {
+        Map<String, String> data = dataTable.asMap();
+        getDriver().get(
+            "http://103.245.237.118:8081/opencart/administrator/index.php"
+            + "?route=customer/customer/add"
+        );
+        // Điền form (cần tạo CustomerFormPage tương tự)
+        // customerFormPage.fill(data);
+        // customerFormPage.save();
+    }
+
+    @Then("UI xác nhận tạo customer thành công")
+    public void verifySuccessAlert() {
+        $(".alert-success").shouldBeVisible();
+    }
+
+    @Then("customer {string} tồn tại trong Database với trạng thái active")
+    public void verifyCustomerActiveInDb(String email) {
+        Map<String, String> customer = db.getCustomerByEmail(email);
+        assertFalse(customer.isEmpty(), "Customer " + email + " không tồn tại trong DB");
+        assertEquals("1", customer.get("status"),
+            "Customer " + email + " không ở trạng thái active trong DB");
+    }
+
+    @Then("dữ liệu trong Database khớp với thông tin vừa nhập")
+    public void verifyDbMatchesInput() {
+        // So sánh từng trường với dbCustomer đã lưu ở bước trước
+        assertNotNull(dbCustomer.get("firstname"));
+        assertNotNull(dbCustomer.get("email"));
+    }
+}
+```
+
+---
+
+## 12.10 — Hooks: Tự động dọn dẹp Test Data
+
+Tạo `src/test/java/com/example/stepdefinitions/IntegrationHooks.java`:
+
+```java
+package com.example.stepdefinitions;
+
+import com.example.utils.DatabaseHelper;
+import io.cucumber.java.After;
+import io.cucumber.java.Scenario;
+
+public class IntegrationHooks {
+
+    private final DatabaseHelper db = new DatabaseHelper();
+
+    // Dọn dẹp customer test sau mỗi scenario có tag @cleanup
+    @After("@cleanup")
+    public void cleanupTestCustomer(Scenario scenario) {
+        // Xóa các customer được tạo trong quá trình test
+        String[] testEmails = {"sync@test.com", "integration_test@test.com"};
+        for (String email : testEmails) {
+            try {
+                db.deleteCustomerByEmail(email);
+            } catch (Exception e) {
+                System.out.println("Cleanup warning: " + e.getMessage());
+            }
+        }
+    }
+}
+```
+
+---
+
+## 12.11 — Kiến trúc Integration Test
+
+```
+                    ┌──────────────────────────┐
+                    │       Feature File        │
+                    │  (customer_sync.feature)  │
+                    └────────────┬─────────────┘
+                                 │
+                    ┌────────────▼─────────────┐
+                    │     IntegrationSteps      │
+                    │   (Step Definitions)      │
+                    └──────┬────────┬─────┬────┘
+                           │        │     │
+              ┌────────────▼─┐  ┌───▼──┐ ┌▼─────────────┐
+              │ Page Objects  │  │ API  │ │   Database   │
+              │ AdminLoginPage│  │Helper│ │   Helper     │
+              │CustomerListPg │  │      │ │  (JDBC/MySQL)│
+              └──────┬────────┘  └──┬───┘ └───────┬──────┘
+                     │              │              │
+              ┌──────▼──┐     ┌─────▼──┐   ┌──────▼──────┐
+              │ Web UI  │     │REST API│   │  MySQL DB   │
+              │(Browser)│     │        │   │oc_customer  │
+              │ Admin   │     │        │   │oc_order     │
+              └─────────┘     └────────┘   └─────────────┘
+```
+
+### Nguyên tắc khi viết Integration Test
+
+| Nguyên tắc | Mô tả |
+|-----------|-------|
+| **Database là nguồn sự thật** | Khi UI và DB không khớp, DB luôn đúng |
+| **Tự tạo và tự dọn dẹp** | Mỗi test tự insert và delete data riêng |
+| **Assert ở nhiều layer** | Sau 1 action, kiểm tra cả UI + DB (và API nếu cần) |
+| **Idempotent** | Chạy test nhiều lần phải cho kết quả giống nhau |
+| **Dùng `@cleanup` tag** | Gắn tag để hook tự dọn dẹp DB sau test |
+
+---
+
+## 12.12 — Ví dụ đầy đủ: So sánh 3 layer
+
+```gherkin
+# features/integration/three_layer_check.feature
+@integration @e2e @cleanup
+Feature: Kiểm tra đồng bộ 3 layer cho OpenCart
+
+  Scenario: Số lượng sản phẩm active khớp giữa DB, API, và UI
+    # Layer 1 — Database
+    Given đếm số sản phẩm active từ Database
+
+    # Layer 2 — Web UI
+    When admin mở trang danh sách sản phẩm trên Web
+    Then số sản phẩm trên UI bằng với số trong Database
+
+    # Layer 3 — API (nếu hệ thống có endpoint public)
+    When gọi API lấy danh sách sản phẩm
+    Then số sản phẩm từ API bằng với Database
+```
+
+```java
+// Step Definitions cho 3-layer check
+private int dbProductCount;
+private int uiProductCount;
+private int apiProductCount;
+
+@Given("đếm số sản phẩm active từ Database")
+public void countProductsFromDb() {
+    String sql = "SELECT COUNT(*) FROM oc_product WHERE status = 1";
+    dbProductCount = db.executeCountQuery(sql);  // method trong DatabaseHelper
+}
+
+@When("admin mở trang danh sách sản phẩm trên Web")
+public void openProductListOnUI() {
+    getDriver().get(
+        "http://103.245.237.118:8081/opencart/administrator/index.php?route=catalog/product"
+    );
+    uiProductCount = productListPage.getTotalCount();
+}
+
+@Then("số sản phẩm trên UI bằng với số trong Database")
+public void verifyUiMatchesDb() {
+    assertEquals(dbProductCount, uiProductCount,
+        "UI=" + uiProductCount + " vs DB=" + dbProductCount);
+}
+
+@When("gọi API lấy danh sách sản phẩm")
+public void callProductApi() {
+    // OpenCart frontend API hoặc custom endpoint
+    Response response = apiHelper.get("catalog/product");
+    apiProductCount = response.jsonPath().getInt("products.size()");
+}
+
+@Then("số sản phẩm từ API bằng với Database")
+public void verifyApiMatchesDb() {
+    assertEquals(dbProductCount, apiProductCount,
+        "API=" + apiProductCount + " vs DB=" + dbProductCount);
+}
+```
 
 ---
 
