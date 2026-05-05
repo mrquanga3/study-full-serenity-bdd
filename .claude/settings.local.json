@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn verify 2>&1)",
+      "Bash(mvn verify -e 2>&1 | grep -A 30 \"TestEngine with ID\")",
+      "Bash(jar tf ~/.m2/repository/io/cucumber/cucumber-junit-platform-engine/7.15.0/cucumber-junit-platform-engine-7.15.0.jar | grep -i \"service\\\\|TestEngine\")",
+      "Bash(ls /Users/ndquang4/study-full-serenity-bdd/target/failsafe-reports/ 2>/dev/null && find /Users/ndquang4/study-full-serenity-bdd/target -name \"*.dump*\" 2>/dev/null | head -5)"
+    ]
+  }
+}

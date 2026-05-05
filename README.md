@@ -193,10 +193,10 @@ git --version
 ### Cách 1: IntelliJ IDEA
 
 ```
-File → New Project → Maven Archetype
-GroupId:    com.example
-ArtifactId: serenity-demo
-Version:    1.0-SNAPSHOT
+File → New Project → Java -> Build System: Maven
+In Avanced Setting:
++ GroupId:    com.example
++ ArtifactId: serenity-demo
 ```
 
 ### Cách 2: Terminal
