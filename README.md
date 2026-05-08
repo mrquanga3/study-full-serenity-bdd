@@ -1,4 +1,4 @@
-﻿# Giáo Trình Serenity BDD - Từ Cơ Bản Đến Nâng Cao
+﻿ Giáo Trình Serenity BDD - Từ Cơ Bản Đến Nâng Cao
 
 > **Dành cho người mới bắt đầu** | Java 17 | Maven | Cucumber | JUnit 5
 > Slide có thể xem bằng [Marp](https://marp.app/) hoặc bất kỳ Markdown viewer nào

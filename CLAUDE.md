@@ -19,7 +19,7 @@ SerenityPrject/
 ├── pom.xml                              ← Maven config + dependencies
 ├── README.md                            ← Giáo trình dạng slide
 ├── CLAUDE.md                            ← File này
-├── SKILL.md                             ← Bảng theo dõi kỹ năng
+├── PROJECT_PROGRESS.md                  ← Bảng tiến độ dự án (modules, code samples, bài tập)
 └── src/
     ├── main/java/                        ← (trống, project test only)
     └── test/
@@ -120,5 +120,6 @@ target/site/serenity/index.html
 
 - Project đang ở giai đoạn học tập — code ví dụ trong README.md là tham khảo
 - Khi tạo code mới, đặt đúng package `com.example.*`
-- Luôn cập nhật `SKILL.md` khi thêm module/bài học mới
+- Luôn cập nhật `PROJECT_PROGRESS.md` khi hoàn thiện module/code sample/bài tập mới
 - Khi thêm dependency mới vào `pom.xml`, ghi rõ version cụ thể
+- Dùng `.claude/skills/` để định nghĩa workflow cho từng loại task (create-test, fix-fail, refactor, review-code, v.v.)

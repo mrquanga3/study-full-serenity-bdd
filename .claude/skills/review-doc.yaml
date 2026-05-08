@@ -1,0 +1,87 @@
+name: review-doc
+description: Review documentation, tutorials, and guides for clarity and accuracy
+trigger:
+  keywords:
+    - "review doc"
+    - "doc review"
+    - "check tutorial"
+    - "validate guide"
+    - "review guide"
+
+instructions: |
+  Khi review tài liệu/README Serenity BDD project:
+
+  1. **README.md (Giáo trình) Review**
+     - ✓ Module numbering: rõ ràng, liên tiếp
+     - ✓ Structure: từ cơ bản → nâng cao
+     - ✓ Code example: chạy được, test pass
+     - ✓ Code ref: link tới file source match cấu trúc project
+     - ✓ Bài tập: có bài tập ở cuối module
+     - ✓ Language: tiếng Việt đúng chính tả
+     - ✓ Formatting: markdown valid, dễ đọc
+
+  2. **CLAUDE.md Review**
+     - ✓ Project overview: mô tả đầy đủ
+     - ✓ Project structure: match hiện tại, không outdated
+     - ✓ Commands: chạy được, output đúng
+     - ✓ Conventions: naming, package, tags
+     - ✓ Stack kỹ thuật: version chính xác
+     - ✓ Notes: rõ ràng, hữu ích
+
+  3. **SKILL.md (Progress Tracker) Review**
+     - ✓ Module tracking: hết tất cả module
+     - ✓ Status: Completed/In Progress/Pending rõ ràng
+     - ✓ Skill achieved: liệt kê skill con chi tiết
+     - ✓ Date: ghi ngày complete nếu có
+     - ✓ Notes: ghi lại insight/challenge
+
+  4. **Content Clarity**
+     - ✓ Tiêu đề rõ ràng, mô tả tóm tắt
+     - ✓ Ví dụ: minh họa concept, easy to follow
+     - ✓ Link: working, không broken
+     - ✓ Image: nếu có, path relative, quality ok
+     - ✓ Terminology: consistent, correct
+     - ✓ Instruction: step-by-step, dễ làm theo
+
+  5. **Accuracy Review**
+     - ✓ Code example: chạy mà không error
+     - ✓ Command: output match documentation
+     - ✓ File path: match cấu trúc project
+     - ✓ Dependency: version match pom.xml
+     - ✓ URL: working, không 404
+     - ✓ Javadoc/Comment: match code behavior
+
+  6. **Completeness**
+     - ✓ Bài học: có đủ yêu cầu module
+     - ✓ Ví dụ: cover cả happy path + edge case
+     - ✓ Bài tập: clear requirement, achievable
+     - ✓ Reference: link tài liệu ngoài nếu cần
+     - ✓ Troubleshooting: common issue + solution
+
+  7. **Language & Style**
+     - ✓ Tiếng Việt: đúng chính tả, ngữ pháp
+     - ✓ Tone: professional, clear, not too casual
+     - ✓ Consistency: naming, terminology
+     - ✓ Format: heading, code, list consistent
+     - ✓ No typo, no formatting error
+
+  8. **Review Checklist**
+     - [ ] Content accurate, code work
+     - [ ] Language correct, easy to understand
+     - [ ] Link valid, path correct
+     - [ ] Example cover requirement
+     - [ ] Exercise clear, achievable
+     - [ ] Formatting clean, professional
+     - [ ] Up-to-date, no outdated info
+
+  9. **Feedback Format**
+     - Issue: describe specific problem
+     - Section: where in document
+     - Suggestion: proposed fix
+     - Priority: Critical/High/Low
+
+tags:
+  - documentation-review
+  - quality-assurance
+  - tutorial
+  - giáo-trình

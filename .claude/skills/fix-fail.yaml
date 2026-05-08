@@ -1,0 +1,68 @@
+name: fix-fail
+description: Fix failed tests, troubleshoot flakiness, and resolve test issues
+trigger:
+  keywords:
+    - "fix fail"
+    - "test fail"
+    - "flaky"
+    - "debug test"
+    - "assertion fail"
+    - "timeout"
+    - "element not found"
+
+instructions: |
+  Khi fix test fail trong Serenity BDD project:
+
+  1. **Xác định root cause**
+     - Đọc lỗi từ Console/Report: assertion failure hay locator fail?
+     - Kiểm tra browser wait strategy: có timeout không?
+     - Kiểm tra Element locator: @FindBy selector còn valid?
+     - Kiểm tra test data: data có hợp lệ?
+     - Kiểm tra môi trường: URL, credentials có đúng?
+
+  2. **Loại lỗi thường gặp**
+
+     a) **Element Not Found / Timeout**
+        - Dùng `waitUntilVisible()` thay `Thread.sleep()`
+        - Review selector: CSS/XPath có đúng sau UI change?
+        - Kiểm tra implicit wait trong `serenity.conf`
+        - Kiểm tra element có modal/dialog chặn không
+
+     b) **Assertion Fail**
+        - Kiểm tra expected vs actual value
+        - Test data hoặc method trả về sai value
+        - Message assert phải rõ ràng giúp debug
+
+     c) **Flaky Test**
+        - Đặc biệt là network/async issue
+        - Dùng explicit wait, không hardcode delay
+        - Kiểm tra race condition: element updated sau perform action?
+        - Nếu API async, dùng retry logic hoặc polling wait
+
+     d) **Test Data Issue**
+        - Kiểm tra CSV/JSON valid
+        - Kiểm tra default value nếu field missing
+        - Kiểm tra mock data trên staging/prod match không?
+
+  3. **Fix process**
+     - 1️⃣ Run lại test xem reproduce được không
+     - 2️⃣ Thêm log/screenshot nếu cần debug
+     - 3️⃣ Fix issue (selector, wait, logic, data)
+     - 4️⃣ Run lại để confirm pass
+     - 5️⃣ Check xem fix có tác động test khác không
+
+  4. **Serenity Best Practice**
+     - Dùng `@Screenshots(onFailure = true)` để capture screen
+     - Dùng `getDriver()` để access WebDriver nếu cần custom logic
+     - Nếu flaky, tăng wait timeout trong Page Object
+     - Nếu tester phản ánh test, kiểm tra trước - đừng tắt test (skip)
+
+  5. **Cập nhật**
+     - Ghi comment trong code: "Fix: ...", "Issue: ..."
+     - Nếu là scenario mới phát hiện, tạo feature test cho nó
+
+tags:
+  - debugging
+  - fix
+  - troubleshooting
+  - serenity
