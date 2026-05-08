@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn verify 2>&1)",
+      "Bash(mvn verify -e 2>&1 | grep -A 30 \"TestEngine with ID\")",
+      "Bash(jar tf ~/.m2/repository/io/cucumber/cucumber-junit-platform-engine/7.15.0/cucumber-junit-platform-engine-7.15.0.jar | grep -i \"service\\\\|TestEngine\")",
+      "Bash(ls /Users/ndquang4/study-full-serenity-bdd/target/failsafe-reports/ 2>/dev/null && find /Users/ndquang4/study-full-serenity-bdd/target -name \"*.dump*\" 2>/dev/null | head -5)",
+      "Bash(curl *)",
+      "Bash(mvn clean *)",
+      "Bash(mvn dependency:unpack -Dartifact=net.serenity-bdd:serenity-cucumber:5.3.8:jar -DoutputDirectory=target/serenity-unpack)",
+      "Bash(mvn dependency:unpack -Dartifact=net.serenity-bdd:serenity-core:5.3.8:jar -DoutputDirectory=target/serenity-core-unpack -q)",
+      "Bash(start *)",
+      "Bash(mvn verify *)",
+      "Bash(python3 *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\study-full-serenity-bdd\\\\target\\\\screenshots\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object Name, CreationTime)",
+      "Bash(Format-Table -AutoSize)",
+      "WebSearch",
+      "Bash(gh issue *)"
+    ]
+  }
+}
