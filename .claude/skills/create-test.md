@@ -170,56 +170,71 @@ public class LoginPage extends PageObject {
 
 ---
 
-### 4. **Screenplay Tasks/Actions**
+### 4. **Action Classes (@Steps/@Step Pattern)**
 
-**Location:** `src/test/java/com/example/actions/<ActionName>.java`
+**Location:** `src/test/java/com/example/actions/<Domain>Action.java`
 
 **Cấu trúc:**
 ```java
 package com.example.actions;
 
-import net.serenitybdd.screenplay.Performable;
-import net.serenitybdd.screenplay.Task;
-import net.serenitybdd.screenplay.actions.Click;
-import net.serenitybdd.screenplay.actions.Enter;
 import com.example.pages.LoginPage;
+import net.serenitybdd.annotations.Step;
 
-public class LoginWithValidCredentials implements Task {
-  
-  private String email;
-  private String password;
-  
-  private LoginPage loginPage;
-  
-  public LoginWithValidCredentials(String email, String password) {
-    this.email = email;
-    this.password = password;
-  }
-  
-  @Override
-  public <T extends Actor> void performAs(T actor) {
-    actor.attemptsTo(
-      Click.on(loginPage.getLoginButton()),
-      Enter.theValue(email).into(loginPage.getEmailField()),
-      Enter.theValue(password).into(loginPage.getPasswordField()),
-      Click.on(loginPage.getSubmitButton())
-    );
-  }
-  
-  public static LoginWithValidCredentials withCredentials(String email, String password) {
-    return new LoginWithValidCredentials(email, password);
-  }
+public class LoginAction {
+
+    LoginPage loginPage;   // Serenity tự inject — không dùng new
+
+    @Step("Navigate to login page")
+    public void navigateToLoginPage() {
+        loginPage.open();
+    }
+
+    @Step("Enter username '{0}'")
+    public void enterUsername(String username) {
+        loginPage.enterUsername(username);
+    }
+
+    @Step("Enter password")
+    public void enterPassword(String password) {
+        loginPage.enterPassword(password);
+    }
+
+    @Step("Click login button")
+    public void clickLoginButton() {
+        loginPage.clickLoginButton();
+    }
+
+    @Step("Login as user '{0}'")
+    public void loginAs(String username, String password) {
+        loginPage.loginAs(username, password);
+    }
+}
+```
+
+**Inject vào Step Definition:**
+```java
+public class LoginSteps {
+
+    @Steps                       // import net.serenitybdd.annotations.Steps
+    LoginAction loginAction;     // Serenity tạo proxy, KHÔNG dùng new
+
+    @When("enter username {string}")
+    public void enterUsername(String username) {
+        loginAction.enterUsername(username);
+    }
 }
 ```
 
 **Quy chuẩn:**
 - ✓ Package: `com.example.actions`
-- ✓ Class naming: Action động từ + object (LoginWithValidCredentials)
-- ✓ Implement `Task` từ Serenity
-- ✓ Method `performAs(Actor actor)`
+- ✓ Class naming: `<Domain>Action` (LoginAction, ProductAction)
+- ✓ Import: `net.serenitybdd.annotations.Step` và `net.serenitybdd.annotations.Steps`
+- ✓ Mỗi method public có `@Step("mô tả hiển thị trong report")`
+- ✓ `'{0}'` trong `@Step` = placeholder tham số thứ nhất, `'{1}'` = thứ hai
+- ✓ PageObject khai báo là field — Serenity tự inject, không `new`
 - ✓ Gọi Page Object methods, không Selenium trực tiếp
-- ✓ Builder pattern: static method tạo instance
-- ✓ Tên rõ ràng, describe business action
+- ✓ Step Def inject Action class qua `@Steps` field (không constructor injection)
 
 ---
 
@@ -266,8 +281,8 @@ invalid@test.com,wrongpass,error
 
 **Step Definition:**
 - [ ] Class trong `stepdefinitions` package
-- [ ] Inject Page Object via constructor
-- [ ] Chỉ gọi Page Object/Action, không Selenium
+- [ ] Inject Action class qua `@Steps` field (không constructor, không `new`)
+- [ ] Chỉ gọi Action method, không Page Object trực tiếp, không Selenium
 - [ ] Annotation @Given/@When/@Then đầy đủ
 - [ ] Parameter rõ ràng
 
@@ -278,11 +293,12 @@ invalid@test.com,wrongpass,error
 - [ ] Dùng wait, không Thread.sleep()
 - [ ] Không có assertion trực tiếp
 
-**Action (Screenplay):**
-- [ ] Class trong `actions` package, implement Task
-- [ ] Builder pattern static method
-- [ ] performAs() gọi Page Object, không Selenium
-- [ ] Tên rõ ràng
+**Action (@Steps/@Step):**
+- [ ] Class trong `actions` package
+- [ ] Mỗi method public có `@Step("mô tả")`
+- [ ] PageObject là field — Serenity inject, không `new`
+- [ ] Gọi Page Object, không Selenium trực tiếp
+- [ ] Inject vào Step Def qua `@Steps` field
 
 **Test Data:**
 - [ ] File trong `testdata/<domain>/`

@@ -171,38 +171,46 @@ private void openPage(BasePage page) {
 
 #### **B. Move Complex Logic to Action**
 
-**Before:**
+**Before** (Step Def gọi Page Object trực tiếp):
 ```java
-@When("user login with valid credentials")
-public void userLogin() {
-  loginPage.fillEmail("test@example.com");
-  loginPage.fillPassword("password123");
-  loginPage.waitUntilLoadingDone();
-  loginPage.clickSubmit();
-  loginPage.waitForPageLoad();
+public class LoginSteps {
+    LoginPage loginPage;   // ← trực tiếp, không qua Action
+
+    @When("user login with valid credentials")
+    public void userLogin() {
+        loginPage.enterUsername("admin");
+        loginPage.enterPassword("admin");
+        loginPage.clickLoginButton();
+    }
 }
 ```
 
-**After:**
+**After** (Step Def → @Steps Action → Page Object):
 ```java
-// Step definition - simple, readable
-@When("user login with valid credentials")
-public void userLogin() {
-  actor.attemptsTo(LoginWithValidCredentials.credentials());
+// Action class — business steps có @Step, hiển thị trong report
+public class LoginAction {
+    LoginPage loginPage;   // Serenity inject
+
+    @Step("Enter username '{0}'")
+    public void enterUsername(String username) { loginPage.enterUsername(username); }
+
+    @Step("Enter password")
+    public void enterPassword(String password) { loginPage.enterPassword(password); }
+
+    @Step("Click login button")
+    public void clickLoginButton() { loginPage.clickLoginButton(); }
 }
 
-// Action - complex logic encapsulated
-public class LoginWithValidCredentials implements Task {
-  @Override
-  public <T extends Actor> void performAs(T actor) {
-    actor.attemptsTo(
-      Enter.theValue("test@example.com").into(...),
-      Enter.theValue("password123").into(...),
-      Wait.forLoadingToFinish(),
-      Click.on(...),
-      Wait.forPageLoad()
-    );
-  }
+// Step Definition — chỉ delegate, không chứa logic
+public class LoginSteps {
+    @Steps LoginAction loginAction;
+
+    @When("user login with valid credentials")
+    public void userLogin() {
+        loginAction.enterUsername("admin");
+        loginAction.enterPassword("admin");
+        loginAction.clickLoginButton();
+    }
 }
 ```
 

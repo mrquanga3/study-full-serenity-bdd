@@ -187,7 +187,7 @@
 - [ ] Tag-specific hooks
 
 **Code Samples:**
-- [ ] LoginSteps.java with examples
+- [x] LoginSteps.java — dùng @Steps để inject LoginAction
 - [ ] Hooks with setup/teardown
 - [ ] DataTable handling
 
@@ -198,7 +198,7 @@
 
 ### Module 6: Page Object Pattern
 
-**Status:** `[_]` Chưa bắt đầu
+**Status:** `[~]` Đang phát triển
 
 **README Content:**
 - [ ] PageObject base class
@@ -207,9 +207,11 @@
 - [ ] Serenity assertions
 - [ ] Serenity waits
 - [ ] Page components (reusable)
+- [ ] Action class với @Step (layer trung gian Step Def → Page Object)
 
 **Code Samples:**
-- [ ] LoginPage.java
+- [x] LoginPage.java — enterUsername, enterPassword, clickLoginButton, loginAs
+- [x] LoginAction.java — @Step methods, inject via @Steps
 - [ ] DashboardPage.java
 - [ ] NavbarComponent.java (reusable)
 - [ ] Best practices
@@ -336,6 +338,10 @@
 
 | Ngày | Thay đổi |
 |------|----------|
+| 2026-05-11 | Refactor login flow sang @Steps/@Step pattern |
+| | Tạo LoginAction.java với @Step methods |
+| | Tách loginButton.click() thành clickLoginButton() riêng |
+| | Cập nhật CLAUDE.md, create-test.md, refactor.md |
 | 2026-05-08 | Tạo PROJECT_PROGRESS.md (từ SKILL.md cũ) |
 | | Định nghĩa checklist hoàn thiện project |
 | | Phân chia chi tiết theo 11 modules |

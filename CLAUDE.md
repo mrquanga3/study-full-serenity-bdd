@@ -27,7 +27,7 @@ SerenityPrject/
         │   ├── runners/                  ← CucumberTestRunner
         │   ├── stepdefinitions/          ← Step Definitions (Cucumber)
         │   ├── pages/                    ← Page Objects (Serenity)
-        │   ├── actions/                  ← Screenplay Tasks/Actions
+        │   ├── actions/                  ← Action Classes (@Steps/@Step)
         │   └── utils/                    ← Helper classes (DatabaseHelper, OpenCartApiHelper)
         └── resources/
             ├── serenity.conf             ← Serenity configuration
@@ -95,10 +95,38 @@ mvn clean verify
 | `@cleanup` | Hook sẽ tự dọn dẹp test data trong DB sau khi chạy |
 
 ### Nguyên tắc code
-- Step Definition chỉ được gọi Page Object/Action — không chứa logic Selenium trực tiếp
+- Step Definition **không gọi Page Object trực tiếp** — phải qua Action class
+- Action class chứa `@Step` methods; inject vào Step Def qua `@Steps` field
+- Flow chuẩn: `Cucumber step → @Steps ActionClass → @Step method → PageObject`
 - Page Object extend `PageObject`, dùng `@FindBy` + `WebElementFacade`
 - Không dùng `Thread.sleep()` — dùng `waitUntilVisible()` hoặc `withTimeoutOf()`
 - Test data không hardcode trong step — đọc từ `testdata/` hoặc `Examples:`
+
+### @Steps / @Step Pattern
+```java
+// 1. Action class — chứa business steps, inject PageObject tự động
+public class LoginAction {
+    LoginPage loginPage;                       // Serenity tự inject
+
+    @Step("Enter username '{0}'")
+    public void enterUsername(String username) {
+        loginPage.enterUsername(username);
+    }
+}
+
+// 2. Step Definition — inject Action qua @Steps
+public class LoginSteps {
+    @Steps LoginAction loginAction;            // Serenity tạo proxy
+
+    @When("enter username {string}")
+    public void enterUsername(String username) {
+        loginAction.enterUsername(username);   // @Step được ghi vào report
+    }
+}
+```
+- Import: `net.serenitybdd.annotations.Steps` và `net.serenitybdd.annotations.Step`
+- `'{0}'` trong `@Step` = placeholder cho tham số đầu tiên (hiển thị trong report)
+- **Không dùng `new ActionClass()`** — phải dùng `@Steps` để Serenity tạo proxy
 
 ## Môi trường
 

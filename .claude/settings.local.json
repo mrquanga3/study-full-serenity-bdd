@@ -16,7 +16,8 @@
       "Bash(Select-Object Name, CreationTime)",
       "Bash(Format-Table -AutoSize)",
       "WebSearch",
-      "Bash(gh issue *)"
+      "Bash(gh issue *)",
+      "Bash(Remove-Item *)"
     ]
   }
 }
