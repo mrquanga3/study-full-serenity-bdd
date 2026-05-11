@@ -29,12 +29,16 @@ public class LoginPage extends PageObject {
     public void enterPassword(String password) {
         passwordField.waitUntilVisible().clear();
         passwordField.type(password);
+    }
+
+    public void clickLoginButton() {
         loginButton.click();
     }
 
     public void loginAs(String username, String password) {
         enterUsername(username);
         enterPassword(password);
+        clickLoginButton();
     }
 
     public boolean isErrorMessageDisplayed() {
