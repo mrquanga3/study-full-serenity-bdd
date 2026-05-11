@@ -7,6 +7,5 @@ import org.junit.platform.suite.api.*;
 @SelectClasspathResource("features/login")
 @ConfigurationParameter(key = "cucumber.glue", value = "com.example.stepdefinitions")
 @ConfigurationParameter(key = "cucumber.plugin", value = "net.serenitybdd.cucumber.core.plugin.SerenityReporterParallel,pretty")
-@IncludeTags("ValidCredentials")
 public class LoginRunner {
 }
