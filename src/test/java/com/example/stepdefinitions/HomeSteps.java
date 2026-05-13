@@ -1,123 +1,125 @@
 package com.example.stepdefinitions;
 
-import com.example.pages.HomePage;
+import com.example.actions.HomeAction;
 import io.cucumber.java.en.When;
 import io.cucumber.java.en.Then;
+import net.serenitybdd.annotations.Steps;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HomeSteps {
 
-    HomePage homePage;
+    @Steps
+    HomeAction homeAction;
 
     @Then("I see Dashboard page")
     public void iSeeDashboardPage() {
-        assertTrue(homePage.isDashboardDisplayed(),
+        assertTrue(homeAction.isDashboardDisplayed(),
                 "Dashboard heading should be visible after successful login");
     }
 
     @Then("I see username {string} displayed")
     public void iSeeUsernameDisplayed(String username) {
-        assertTrue(homePage.isUsernameDisplayed(username),
-                "Expected username '" + username + "' should be displayed on Home page, got: " + homePage.getDisplayedUsername());
+        assertTrue(homeAction.isUsernameDisplayed(username),
+                "Expected username '" + username + "' should be displayed on Home page, got: " + homeAction.getDisplayedUsername());
     }
 
     @Then("I see {string} menu displayed")
     public void iSeeMenuDisplayed(String menuName) {
-        assertTrue(homePage.isMenuDisplayed(menuName),
+        assertTrue(homeAction.isMenuDisplayed(menuName),
                 "Menu '" + menuName + "' should be displayed on Dashboard");
     }
 
     @Then("Dashboard page title is {string}")
     public void dashboardPageTitleIs(String title) {
-        assertTrue(homePage.isPageTitle(title),
+        assertTrue(homeAction.isPageTitle(title),
                 "Expected page title to be '" + title + "'");
     }
 
     @Then("page title is {string}")
     public void pageTitleIs(String title) {
-        assertTrue(homePage.isPageTitle(title),
+        assertTrue(homeAction.isPageTitle(title),
                 "Expected page title to be '" + title + "'");
     }
 
     @Then("Dashboard heading is {string}")
     public void dashboardHeadingIs(String heading) {
-        assertTrue(homePage.isDashboardTitleVisible(heading),
+        assertTrue(homeAction.isDashboardTitleVisible(heading),
                 "Expected dashboard heading to be '" + heading + "'");
     }
 
     @Then("I see breadcrumb Home and Dashboard")
     public void iSeeBreadcrumbHomeAndDashboard() {
-        assertTrue(homePage.isBreadcrumbDisplayed("Home", "Dashboard"),
+        assertTrue(homeAction.isBreadcrumbDisplayed("Home", "Dashboard"),
                 "Expected breadcrumb to contain Home and Dashboard");
     }
 
     @Then("I see all main dashboard widgets")
     public void iSeeAllMainDashboardWidgets() {
-        assertTrue(homePage.isTileDisplayed("TOTAL ORDERS"), "TOTAL ORDERS tile should be visible");
-        assertTrue(homePage.isTileDisplayed("TOTAL SALES"), "TOTAL SALES tile should be visible");
-        assertTrue(homePage.isTileDisplayed("TOTAL CUSTOMERS"), "TOTAL CUSTOMERS tile should be visible");
-        assertTrue(homePage.isTileDisplayed("PEOPLE ONLINE"), "PEOPLE ONLINE tile should be visible");
-        assertTrue(homePage.areMainDashboardPanelsDisplayed(), "All main dashboard panels should be visible");
-        assertTrue(homePage.isFooterContains("Version 4.0.2.3"), "Footer should contain OpenCart version");
+        assertTrue(homeAction.isTileDisplayed("TOTAL ORDERS"), "TOTAL ORDERS tile should be visible");
+        assertTrue(homeAction.isTileDisplayed("TOTAL SALES"), "TOTAL SALES tile should be visible");
+        assertTrue(homeAction.isTileDisplayed("TOTAL CUSTOMERS"), "TOTAL CUSTOMERS tile should be visible");
+        assertTrue(homeAction.isTileDisplayed("PEOPLE ONLINE"), "PEOPLE ONLINE tile should be visible");
+        assertTrue(homeAction.areMainDashboardPanelsDisplayed(), "All main dashboard panels should be visible");
+        assertTrue(homeAction.isFooterContains("Version 4.0.2.3"), "Footer should contain OpenCart version");
     }
 
     @When("I click View more on {string} tile")
     public void iClickViewMoreOnTile(String tileTitle) {
-        homePage.clickViewMoreOfTile(tileTitle);
+        homeAction.clickViewMoreOfTile(tileTitle);
     }
 
     @Then("I am redirected to route containing {string}")
     public void iAmRedirectedToRouteContaining(String route) {
-        assertTrue(homePage.currentUrlContains(route),
+        assertTrue(homeAction.currentUrlContains(route),
                 "Expected URL to contain route: " + route);
     }
 
     @Then("Sales Analytics has ranges Today Week Month Year")
     public void salesAnalyticsHasRangesTodayWeekMonthYear() {
-        assertTrue(homePage.hasSalesAnalyticsRanges(),
+        assertTrue(homeAction.hasSalesAnalyticsRanges(),
                 "Sales Analytics should contain Today/Week/Month/Year ranges");
     }
 
     @Then("Sales Analytics chart is displayed")
     public void salesAnalyticsChartIsDisplayed() {
-        assertTrue(homePage.isSalesAnalyticsCanvasDisplayed(),
+        assertTrue(homeAction.isSalesAnalyticsCanvasDisplayed(),
                 "Sales Analytics chart should be visible");
     }
 
     @When("I select Sales Analytics range {string}")
     public void iSelectSalesAnalyticsRange(String range) {
-        homePage.clickSalesAnalyticsRange(range.toLowerCase());
+        homeAction.clickSalesAnalyticsRange(range.toLowerCase());
     }
 
     @Then("Sales Analytics range {string} is active")
     public void salesAnalyticsRangeIsActive(String range) {
-        assertTrue(homePage.isSalesAnalyticsRangeActive(range.toLowerCase()),
+        assertTrue(homeAction.isSalesAnalyticsRangeActive(range.toLowerCase()),
                 "Expected range " + range + " to be active");
     }
 
     @Then("dashboard chart request is sent with range {string}")
     public void dashboardChartRequestIsSentWithRange(String range) {
-        assertTrue(homePage.hasChartRequestForRange(range.toLowerCase()),
+        assertTrue(homeAction.hasChartRequestForRange(range.toLowerCase()),
                 "Expected chart request with range=" + range);
     }
 
     @Then("World Map widget is displayed")
     public void worldMapWidgetIsDisplayed() {
-        assertTrue(homePage.isWorldMapDisplayed(), "World Map widget should be displayed with SVG map");
+        assertTrue(homeAction.isWorldMapDisplayed(), "World Map widget should be displayed with SVG map");
     }
 
     @Then("Recent Activity shows No results message")
     public void recentActivityShowsNoResultsMessage() {
-        assertTrue(homePage.isRecentActivityNoResultsDisplayed(),
+        assertTrue(homeAction.isRecentActivityNoResultsDisplayed(),
                 "Recent Activity should show No results! when empty");
     }
 
     @Then("Latest Orders table is displayed with standard columns")
     public void latestOrdersTableIsDisplayedWithStandardColumns() {
-        assertTrue(homePage.isLatestOrdersTableDisplayed(), "Latest Orders table should be displayed");
-        assertTrue(homePage.latestOrdersTableContainsColumns(
+        assertTrue(homeAction.isLatestOrdersTableDisplayed(), "Latest Orders table should be displayed");
+        assertTrue(homeAction.latestOrdersTableContainsColumns(
                         "Order ID",
                         "Customer",
                         "Status",
@@ -129,95 +131,95 @@ public class HomeSteps {
 
     @When("I open first order from Latest Orders")
     public void iOpenFirstOrderFromLatestOrders() {
-        homePage.clickFirstLatestOrderViewButton();
+        homeAction.clickFirstLatestOrderViewButton();
     }
 
     @Then("Order detail page is opened")
     public void orderDetailPageIsOpened() {
-        assertTrue(homePage.isOrderInfoPageOpened(),
+        assertTrue(homeAction.isOrderInfoPageOpened(),
                 "Order detail page should be opened with order_id");
     }
 
     @When("I open Developer Settings from dashboard")
     public void iOpenDeveloperSettingsFromDashboard() {
-        homePage.openDeveloperSettingsModal();
+        homeAction.openDeveloperSettingsModal();
     }
 
     @Then("Developer Settings modal is shown")
     public void developerSettingsModalIsShown() {
-        assertTrue(homePage.isDeveloperSettingsModalDisplayed(),
+        assertTrue(homeAction.isDeveloperSettingsModalDisplayed(),
                 "Developer Settings modal should be visible");
-        assertTrue(homePage.isDeveloperCacheRowsDisplayed(),
+        assertTrue(homeAction.isDeveloperCacheRowsDisplayed(),
                 "Developer Settings modal should contain Theme and SASS cache rows");
     }
 
     @When("I close Developer Settings modal")
     public void iCloseDeveloperSettingsModal() {
-        homePage.closeDeveloperSettingsModal();
+        homeAction.closeDeveloperSettingsModal();
     }
 
     @Then("Developer Settings modal is closed")
     public void developerSettingsModalIsClosed() {
-        assertTrue(homePage.isDeveloperSettingsModalClosed(),
+        assertTrue(homeAction.isDeveloperSettingsModalClosed(),
                 "Developer Settings modal should be closed");
     }
 
     @When("I toggle left sidebar menu")
     public void iToggleLeftSidebarMenu() {
-        homePage.clickSidebarToggle();
+        homeAction.clickSidebarToggle();
     }
 
     @Then("left sidebar active state is toggled")
     public void leftSidebarActiveStateIsToggled() {
-        boolean firstState = homePage.isSidebarActive();
-        homePage.clickSidebarToggle();
-        boolean secondState = homePage.isSidebarActive();
+        boolean firstState = homeAction.isSidebarActive();
+        homeAction.clickSidebarToggle();
+        boolean secondState = homeAction.isSidebarActive();
         assertFalse(firstState == secondState,
                 "Left sidebar active state should change after toggling");
     }
 
     @When("I expand {string} menu in left sidebar")
     public void iExpandMenuInLeftSidebar(String menuName) {
-        homePage.expandLeftMenu(menuName);
+        homeAction.expandLeftMenu(menuName);
     }
 
     @Then("submenu {string} is expanded")
     public void submenuIsExpanded(String submenuId) {
-        assertTrue(homePage.isSubmenuExpanded(submenuId),
+        assertTrue(homeAction.isSubmenuExpanded(submenuId),
                 "Expected submenu " + submenuId + " to be expanded");
     }
 
     @When("I click {string} submenu item")
     public void iClickSubmenuItem(String submenuItem) {
-        homePage.clickSubmenuItem(submenuItem);
+        homeAction.clickSubmenuItem(submenuItem);
     }
 
     @When("I open user dropdown menu")
     public void iOpenUserDropdownMenu() {
-        homePage.openUserDropdown();
+        homeAction.openUserDropdown();
     }
 
     @Then("user dropdown shows profile shortcuts")
     public void userDropdownShowsProfileShortcuts() {
-        assertTrue(homePage.userDropdownContainsItems(
+        assertTrue(homeAction.userDropdownContainsItems(
                         "Your Profile",
                         "Your Store",
                         "OpenCart Homepage",
                         "Documentation",
                         "Support Forum"),
                 "User dropdown should contain expected shortcut items");
-        assertTrue(homePage.userDropdownLinksAreNotEmpty(),
+        assertTrue(homeAction.userDropdownLinksAreNotEmpty(),
                 "User dropdown links should have non-empty href");
     }
 
     @When("I logout from dashboard")
     public void iLogoutFromDashboard() {
-        homePage.clickLogout();
+        homeAction.clickLogout();
     }
 
     @Then("I am redirected to login page")
     public void iAmRedirectedToLoginPage() {
-        assertTrue(homePage.currentUrlContains("route=common/login"),
+        assertTrue(homeAction.currentUrlContains("route=common/login"),
                 "Expected URL to contain login route after logout");
     }
 }

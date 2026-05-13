@@ -12,7 +12,7 @@ Feature: Login — OpenCart Admin Panel
 
   @AUTO-1 @SMOKE @REGRESSION
   Scenario: AUTO-1 — Login thành công với credentials hợp lệ
-    When I login with user "admin" and password "admin"
+    When I login with user "admin" and password "admin1"
     Then I see Dashboard page
 
   # ================================================================
